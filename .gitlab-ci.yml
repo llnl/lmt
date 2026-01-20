@@ -12,7 +12,7 @@ build lmt:
     FF_ENABLE_JOB_CLEANUP:
       value: "1"
   tags:
+    - cicada
     - shell
-    - tyche3
   script:
     sh autogen.sh && ./configure && make && make -C test check
