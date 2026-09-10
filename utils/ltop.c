@@ -2199,7 +2199,7 @@ _poll_cerebro (char *fs, List mdt_data, List ost_data, int stale_secs,
         trcv = lmt_cbr_get_time (c);
         if (recf)
             _record_file (recf, tnow, trcv, node, name, s);
-        else if (!strcmp (name, "lmt_mdt") && vers == 2)
+        if (!strcmp (name, "lmt_mdt") && vers == 2)
             _decode_mdt_v2 (s, fs, mdt_data, tnow, trcv, stale_secs);
         else if (!strcmp (name, "lmt_mdt") && vers == 3)
             _decode_mdt_v3 (s, fs, mdt_data, tnow, trcv, stale_secs);
