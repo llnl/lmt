@@ -74,9 +74,13 @@
 #define PROC_FS_LUSTRE_MDT_EXPORTS      "%s/%s/exports"
 #define PROC_FS_LUSTRE_MDT_EXPORT_STATS "%s/%s/exports/%s/stats"
 
-#define PROC_FS_LUSTRE_OST_BRW_STATS   "fs/lustre/obdfilter/%s/brw_stats"
-#define PROC_FS_LUSTRE_OSD_ZFS_BRW_STATS "fs/lustre/osd-zfs/%s/brw_stats"
-#define DEBUGFS_OST_BRW_STATS     "kernel/debug/lustre/osd-zfs/%s/brw_stats"
+static const char *brw_stats_paths[] = {
+    "fs/lustre/obdfilter/%s/brw_stats",             /* <= 2.10.x            */
+    "fs/lustre/osd-ldiskfs/%s/brw_stats",           /* 2.11-2.14 ldiskfs    */
+    "fs/lustre/osd-zfs/%s/brw_stats",               /* 2.11-2.14 zfs        */
+    "kernel/debug/lustre/osd-ldiskfs/%s/brw_stats", /* >= 2.15 ldiskfs      */
+    "kernel/debug/lustre/osd-zfs/%s/brw_stats",     /* >= 2.15 zfs          */
+};
 
 #define PROC_FS_LUSTRE_OST_RECOVERY_STATUS \
                                         "fs/lustre/obdfilter/%s/recovery_status"
@@ -1332,22 +1336,16 @@ int
 proc_lustre_brwstats (pctx_t ctx, char *name, brw_t t, histogram_t **hp)
 {
     int ret = -1;
+    int i;
     histogram_t *h = NULL;
-    int lustre_version = _packed_lustre_version (ctx);
-    char *fs_lustre_ost_brw_stats = NULL;
-    
-    if (((lustre_version >= LUSTRE_1_8) && (lustre_version <= LUSTRE_2_10_8)) ||
-            lustre_version < 0)
-        fs_lustre_ost_brw_stats = PROC_FS_LUSTRE_OST_BRW_STATS;
-    else if ((lustre_version > LUSTRE_2_10_8) && (lustre_version < LUSTRE_2_15))
-        fs_lustre_ost_brw_stats = PROC_FS_LUSTRE_OSD_ZFS_BRW_STATS;
-    else
-        fs_lustre_ost_brw_stats = DEBUGFS_OST_BRW_STATS;
-        
-    if (strstr (name, "-OST"))
-        ret = proc_openf (ctx, fs_lustre_ost_brw_stats, name);
-    else
+
+    if (!strstr (name, "-OST")) {
         errno = EINVAL;
+        goto done;
+    }
+    for (i = 0; i < sizeof(brw_stats_paths)/sizeof(brw_stats_paths[0]); i++)
+        if ((ret = proc_openf (ctx, brw_stats_paths[i], name)) == 0)
+            break;
     if (ret < 0)
         goto done;
     ret = _brw_seek (ctx, t);
