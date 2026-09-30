@@ -958,7 +958,7 @@ _update_display_top (WINDOW *win, char *fs, List ost_data, List mdt_data,
          * recovery_status is just a string, and has no timestamp.
          */
         if ((tnow - m->common.tgt_metric_timestamp) < stale_secs) {
-            if (m->common.recov_status  &&
+            if (m->common.recov_status[0] != '\0' &&
                 !strstr(m->common.recov_status,"COMPLETE") &&
                 !strstr(m->common.recov_status,"INACTIVE")) {
                 /*
@@ -1005,7 +1005,7 @@ _update_display_top (WINDOW *win, char *fs, List ost_data, List mdt_data,
         else if (feof (playf))
             mvwprintw (win, y, 68, "END OF FILE");
         else
-            mvwprintw (win, y, 55, "%*s", strlen (ts) - 1, ts);
+            mvwprintw (win, y, 55, "%*s", (int)(strlen (ts) - 1), ts);
         wattroff (win, A_REVERSE);
     }
     y++;
@@ -1075,7 +1075,7 @@ _create_fsstat (char *fsname, uint64_t mdts, uint64_t osts)
 {
     fsstat_t *f = xmalloc (sizeof (*f));
     memset (f, 0, sizeof (*f));
-    strncpy (f->fsname, fsname, sizeof (f->fsname));
+    snprintf (f->fsname, sizeof(f->fsname), "%s", fsname);
     f->num_mdt = mdts;
     f->num_ost = osts;
     return f;
@@ -1095,7 +1095,7 @@ _update_display_choose_fs (int selfs, WINDOW *win, List fsl)
 
     wclear (win);
     mvwprintw (win, y++, 0, "Select a filesystem to monitor.");
-    mvwprintw (win, y++, 0, "");
+    y++; /* blank line */
     wattron (win, A_REVERSE);
     mvwprintw (win, y++, 0, "NAME              MDTs    OSTs");
     wattroff (win, A_REVERSE);
@@ -1103,7 +1103,7 @@ _update_display_choose_fs (int selfs, WINDOW *win, List fsl)
     for (; (f = list_next (fsitr)); y++) {
         if (y - hdr_rows == selfs)
             wattron (win, A_UNDERLINE);
-        mvwprintw (win, y, 0, "%-17s %4d    %4d", f->fsname, f->num_mdt, f->num_ost);
+        mvwprintw (win, y, 0, "%-17s %4" PRIu64 "    %4" PRIu64, f->fsname, f->num_mdt, f->num_ost);
         if (y - hdr_rows == selfs)
             wattroff (win, A_UNDERLINE);
     }
@@ -1261,7 +1261,7 @@ _update_display_mdt (WINDOW *win, int line, void *target, int stale_secs,
     if ((tnow - m->common.tgt_metric_timestamp) > stale_secs) {
         // available info is expired
         mvwprintw (win, line, 0, "%4.4s data is stale", m->common.name);
-    } else if (m->common.recov_status &&
+    } else if (m->common.recov_status[0] != '\0' &&
 	       !strstr(m->common.recov_status,"COMPLETE") &&
 	       !strstr(m->common.recov_status,"INACTIVE")) {
         /* mdt is in recovery or not running - display recovery stats */
@@ -1302,7 +1302,7 @@ _update_display_ost (WINDOW *win, int line, void *target, int stale_secs,
         mvwprintw (win, line, 0, "%4.4s %1.1s data is stale",
                    o->common.name, o->common.tgtstate);
     /* ost is in recovery - display recovery stats */
-    } else if (o->common.recov_status &&
+    } else if (o->common.recov_status[0] != '\0' &&
 	       !strstr(o->common.recov_status,"COMPLETE") &&
 	       !strstr(o->common.recov_status,"INACTIVE")) {
         mvwprintw (win, line, 0, "%4.4s %1.1s %10.10s   %s",

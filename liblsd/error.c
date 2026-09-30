@@ -338,18 +338,16 @@ msg (const char *fmt, ...)
     va_end (ap);
 }
 
-void
+void __attribute__ ((noreturn))
 lsd_fatal_error (char *file, int line, char *mesg)
 {
     msg_exit ("fatal error: %s: %s::%d", mesg, file, line);
 }
 
-void *
+void * __attribute__ ((noreturn))
 lsd_nomem_error (char *file, int line, char *mesg)
 {
     msg_exit ("out of memory: %s: %s::%d", mesg, file, line);
-    /*NOTREACHED*/
-    return NULL;
 }
 
 /*
